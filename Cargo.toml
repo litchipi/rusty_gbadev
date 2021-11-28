@@ -1,0 +1,14 @@
+[package]
+name = "rustygba"
+version = "0.0.1"
+authors = ["Litchi Pi <litchi.pi@protonmail.com>"]
+edition = "2018"
+description = "GBA game development library, based on the \"gba\" crate"
+repository = "https://github.com/litchipi/rusty_gbadev"
+license = "MIT"
+keywords = ["gamedev", "gameboy", "gba", "gameboy-advance"]
+categories = ["game-development", "embedded", "game-engines"]
+readme = "README.md"
+
+[dependencies]
+gba = "0.5.2"

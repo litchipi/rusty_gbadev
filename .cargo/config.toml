@@ -1,0 +1,5 @@
+[profile]
+target = "thumbv4t-none-eabi"
+
+[unstable]
+build-std = ["core"]
