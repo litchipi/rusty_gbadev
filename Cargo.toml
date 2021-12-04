@@ -6,8 +6,8 @@ edition = "2018"
 description = "GBA game development library, based on the \"gba\" crate"
 repository = "https://github.com/litchipi/rusty_gbadev"
 license = "MIT"
-keywords = ["gamedev", "gameboy", "gba", "gameboy-advance"]
-categories = ["game-development", "embedded", "game-engines"]
+keywords = ["gamedev", "gameboy", "gba", "gameboy-advance", "game"]
+categories = ["game-development", "embedded", "game-engines", "no-std"]
 readme = "README.md"
 
 [dependencies]
