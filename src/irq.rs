@@ -1,8 +1,7 @@
 use gba::mmio_addresses as addr;
-use gba::mmio_types::InterruptFlags;
+use gba::mmio_types::{DisplayStatus, InterruptFlags, TimerControl};
 
-use gba::debug;
-
+#[derive(Debug)]
 pub enum Irq {
     VBlank,
     HBlank,
@@ -26,21 +25,32 @@ pub struct GbaIrq {
 }
 
 impl GbaIrq {
-    pub fn enable_selected_irq(&self) {
+    pub fn enable_selected_irq(&mut self) {
         let flags = InterruptFlags::new()
             .with_vblank(true)
             .with_hblank(self.enable_hblank_irq)
             .with_vcount(self.enable_vcount_irq)
             .with_timer0(self.enable_timer0_irq)
             .with_timer1(self.enable_timer1_irq);
-        debug!(
-            "Enable IRQ {} {} {} {}",
-            self.enable_hblank_irq,
-            self.enable_vcount_irq,
-            self.enable_timer0_irq,
-            self.enable_timer1_irq
-        );
-        unsafe { addr::IE.write(flags) };
+
+        let display_status = DisplayStatus::new()
+            .with_vblank_irq_enabled(true)
+            .with_hblank_irq_enabled(self.enable_hblank_irq)
+            .with_vcount_irq_enabled(self.enable_vcount_irq);
+
+        unsafe {
+            addr::DISPSTAT.write(display_status);
+            addr::IE.write(flags)
+        };
+    }
+
+    pub fn set_timer_irq(&mut self, timer: u8, state: bool) {
+        match timer {
+            0 => self.enable_timer0_irq = state,
+            1 => self.enable_timer1_irq = state,
+            _ => unreachable!(),
+        }
+        self.enable_selected_irq()
     }
 
     pub fn set_irq(&mut self, irq: Irq) {
@@ -63,12 +73,36 @@ impl GbaIrq {
         }
     }
 
-    // TODO Easy wrappers to handle timers
+    pub fn set_timer_raw(&mut self, timer: u8, init_val: u16, prescaler: u8) {
+        start_timer(timer, init_val, prescaler);
+        self.set_timer_irq(timer, true);
+    }
+
+    pub fn set_timer_secs(&mut self, timer: u8, nsecs: u32) {
+        // TODO Compute value and prescaler based on number of seconds
+        start_timer(timer, nsecs as u16, 3);
+        self.set_timer_irq(timer, true);
+    }
+}
+
+fn start_timer(timer: u8, init_val: u16, prescaler: u8) {
+    let (rld, ctl) = match timer {
+        0 => (addr::TIMER0_RELOAD, addr::TIMER0_CONTROL),
+        1 => (addr::TIMER1_RELOAD, addr::TIMER1_CONTROL),
+        _ => unreachable!(),
+    };
+    rld.write(init_val);
+    ctl.write(
+        TimerControl::new()
+            .with_irq_on_overflow(true)
+            .with_enabled(true)
+            .with_prescaler_selection(prescaler),
+    );
 }
 
 impl From<IrqConfiguration> for GbaIrq {
     fn from(_c: IrqConfiguration) -> GbaIrq {
-        let i = GbaIrq {
+        let mut i = GbaIrq {
             enable_hblank_irq: false,
             enable_vcount_irq: false,
             enable_timer0_irq: false,
@@ -100,7 +134,7 @@ macro_rules! set_irq_functions {
             let mut intr_wait_flags = addr::INTR_WAIT_ACKNOWLEDGE.read();
 
             unsafe {
-                let irq_arg = get_irq_arg();
+                let irq_arg = &mut *get_irq_arg();
                 if irq_tohandle.vblank() {
                     $vblank(irq_arg);
                     intr_wait_flags.set_vblank(true);
@@ -130,16 +164,3 @@ macro_rules! set_irq_functions {
         }
     };
 }
-
-// pub fn start_timers() {
-//     let init_val: u16 = u32::wrapping_sub(0x1_0000, 64) as u16;
-//     const TIMER_SETTINGS: TimerControl = TimerControl::new()
-//         .with_irq_on_overflow(true)
-//         .with_enabled(true);
-//
-//     addr::TIMER0_RELOAD.write(init_val);
-//     addr::TIMER0_CONTROL.write(TIMER_SETTINGS.with_prescaler_selection(3));
-//     addr::TIMER1_RELOAD.write(init_val);
-//     addr::TIMER1_CONTROL.write(TIMER_SETTINGS.with_prescaler_selection(1));
-// }
-//

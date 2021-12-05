@@ -20,14 +20,14 @@ impl<T> GbaSystem<T> {
 #[macro_export]
 macro_rules! gba_game {
     ($setup:ident, $loop:ident, $game:ident) => {
-        static mut sys_ptr: *mut GbaSystem<$game> = (0 as *mut GbaSystem<$game>);
-
-        // TODO Use some Mutex to secure this
-        unsafe fn get_irq_arg() -> &'static mut GbaSystem<$game> {
-            &mut *sys_ptr
-        }
-
         use $crate::prelude::*;
+
+        static mut SYS_PTR: *mut GbaSystem<$game> = 0 as *mut GbaSystem<$game>;
+
+        #[inline]
+        pub fn get_irq_arg() -> *mut GbaSystem<$game> {
+            unsafe { SYS_PTR }
+        }
 
         #[panic_handler]
         #[allow(unused)]
@@ -42,7 +42,7 @@ macro_rules! gba_game {
         pub fn main() -> ! {
             let mut a: GbaSystem<$game> = $setup();
             unsafe {
-                sys_ptr = &mut a as *mut GbaSystem<$game>;
+                SYS_PTR = &mut a as *mut GbaSystem<$game>;
             }
             init_irq_function();
             loop {
@@ -52,3 +52,28 @@ macro_rules! gba_game {
         }
     };
 }
+
+/*
+
+pub struct GbaSystem {
+    n : u8
+}
+
+static mut SYS_PTR: *mut GbaSystem = 0 as *mut GbaSystem;
+
+unsafe fn get_sys() -> &'static mut GbaSystem {
+    &mut *(SYS_PTR as *mut GbaSystem)
+}
+
+fn main() {
+    let mut gba = GbaSystem { n : 3 };
+    unsafe {
+        SYS_PTR = &mut gba as *mut GbaSystem;
+    }
+    let mut sys2 = unsafe {get_sys()};
+    println!("{} {}", gba.n, sys2.n);
+    sys2.n += 1;
+    println!("{} {}", gba.n, sys2.n);
+}
+
+ * */

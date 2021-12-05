@@ -1,14 +1,11 @@
 use gba::mmio_addresses as addr;
-use gba::mmio_types::{Color, DisplayControl, DisplayStatus};
+use gba::mmio_types::{Color, DisplayControl};
 
 pub mod colors;
 
 pub struct GraphicsConfiguration {
     display_mode: u16,
     with_display_bg: [bool; 4],
-
-    hblank_irq: bool,
-    vcount_irq: bool,
 }
 
 impl GraphicsConfiguration {
@@ -16,8 +13,6 @@ impl GraphicsConfiguration {
         GraphicsConfiguration {
             display_mode: 3,
             with_display_bg: [false, false, true, false],
-            hblank_irq: false,
-            vcount_irq: false,
         }
     }
 }
@@ -25,7 +20,6 @@ impl GraphicsConfiguration {
 pub struct GbaGraphics {
     pixel: usize,
     ctl: DisplayControl,
-    sts: DisplayStatus,
 }
 
 impl From<GraphicsConfiguration> for GbaGraphics {
@@ -38,10 +32,6 @@ impl From<GraphicsConfiguration> for GbaGraphics {
                 .with_display_bg1(c.with_display_bg[1])
                 .with_display_bg2(c.with_display_bg[2])
                 .with_display_bg3(c.with_display_bg[3]),
-            sts: DisplayStatus::new()
-                .with_vblank_irq_enabled(true)
-                .with_hblank_irq_enabled(c.hblank_irq)
-                .with_vcount_irq_enabled(c.vcount_irq),
         };
         h.apply_config();
         h.fill_screen(colors::BLACK);
@@ -52,7 +42,6 @@ impl From<GraphicsConfiguration> for GbaGraphics {
 impl GbaGraphics {
     pub fn apply_config(&self) {
         addr::DISPCNT.write(self.ctl);
-        addr::DISPSTAT.write(self.sts);
     }
 
     pub fn fill_screen(&self, color: Color) {
