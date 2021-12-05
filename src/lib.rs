@@ -10,7 +10,6 @@ pub mod system;
 //      Will reduce the size of the ROM by stripping the static strings
 
 pub mod prelude {
-    pub use core::cell::UnsafeCell;
     pub use core::panic::PanicInfo;
 
     pub use gba::mmio_addresses as addr;

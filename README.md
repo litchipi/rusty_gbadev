@@ -11,3 +11,6 @@ An example of a project using this library, with the necessary elements to build
 
 Work in progress, feel free to give an advice, raise an issue, bring a PR, or contribute in any other
 way.
+
+## Credits
+- Based on [the gba lib for Rust](https://github.com/rust-console/gba)
