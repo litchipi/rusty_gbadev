@@ -60,3 +60,21 @@ impl GbaGraphics {
         }
     }
 }
+
+// TODO Implement traits
+//      Drawable
+//          set_visible(visible: bool)
+//          draw()
+//
+//      Sprite : Drawable
+//          set_animation_frame(nframe: u32)
+//          set_orientation(orientation: SpriteOrientation)
+//          get_hitbox() -> (ScreenCoord, ScreenCoord)
+//                          // R G B
+//          alter_color(channel: char, alteration: i8)
+//
+//      Player interface : Drawable
+//
+//      Background : Drawable
+//          Self::Identifier
+
