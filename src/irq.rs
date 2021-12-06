@@ -1,6 +1,34 @@
 use gba::mmio_addresses as addr;
 use gba::mmio_types::{DisplayStatus, InterruptFlags, TimerControl};
 
+const SYSTEM_CLOCK : u32 = 16780000;
+
+#[inline]
+fn secs_to_cfg(nsecs: f32) -> (u16, u8) {
+    let mut ncycles = (nsecs * (SYSTEM_CLOCK as f32)) as u32;
+    let mut prescaler = 0;
+
+    let u16max = u16::MAX as u32;
+
+    if ncycles > u16max {
+        ncycles = ncycles >> 6;
+        prescaler = 1;
+    }
+    if ncycles > u16max {
+        ncycles = ncycles >> 2;
+        prescaler = 2;
+    }
+    if ncycles > u16max {
+        ncycles = ncycles >> 2;
+        prescaler = 3;
+    }
+    if ncycles > u16max {
+        panic!("Number of cycles too high, consider using a custom prescaler");
+    }
+
+    (ncycles as u16, prescaler)
+}
+
 #[derive(Debug)]
 pub enum Irq {
     VBlank,
@@ -78,9 +106,9 @@ impl GbaIrq {
         self.set_timer_irq(timer, true);
     }
 
-    pub fn set_timer_secs(&mut self, timer: u8, nsecs: u32) {
-        // TODO Compute value and prescaler based on number of seconds
-        start_timer(timer, nsecs as u16, 3);
+    pub fn set_timer_secs(&mut self, timer: u8, nsecs: f32) {
+        let (ncycles, prescaler) = secs_to_cfg(nsecs);
+        start_timer(timer, ncycles, prescaler);
         self.set_timer_irq(timer, true);
     }
 }
