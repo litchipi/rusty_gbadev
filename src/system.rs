@@ -3,7 +3,6 @@ use crate::irq::{GbaIrq, IrqConfiguration};
 
 use core::mem::{size_of, transmute_copy};
 
-use gba::info;
 use gba::prelude::{use_flash_128k, SaveAccess};
 
 const SAVE_OFFSET: usize = 0;
@@ -60,7 +59,7 @@ impl<T: GameState> GbaSystem<T> {
         use_flash_128k();
         let access = SaveAccess::new().unwrap();
 
-        let mut gsave = self.game.get_gamesave();
+        let gsave = self.game.get_gamesave();
         let data: &mut [u8] = unsafe { transmute_copy(&gsave) };
         let datalen = size_of::<T::SaveType>();
 

@@ -1,7 +1,7 @@
 use gba::mmio_addresses as addr;
 use gba::mmio_types::{DisplayStatus, InterruptFlags, TimerControl};
 
-const SYSTEM_CLOCK : u32 = 16780000;
+const SYSTEM_CLOCK: u32 = 16780000;
 
 #[inline]
 fn secs_to_cfg(nsecs: f32) -> (u16, u8) {
@@ -11,15 +11,15 @@ fn secs_to_cfg(nsecs: f32) -> (u16, u8) {
     let u16max = u16::MAX as u32;
 
     if ncycles > u16max {
-        ncycles = ncycles >> 6;
+        ncycles >>= 6;
         prescaler = 1;
     }
     if ncycles > u16max {
-        ncycles = ncycles >> 2;
+        ncycles >>= 2;
         prescaler = 2;
     }
     if ncycles > u16max {
-        ncycles = ncycles >> 2;
+        ncycles >>= 2;
         prescaler = 3;
     }
     if ncycles > u16max {
