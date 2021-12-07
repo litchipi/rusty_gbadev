@@ -18,6 +18,6 @@ pub mod prelude {
 
     pub use crate::graphics::{colors, GraphicsConfiguration};
     pub use crate::irq::{Irq, IrqConfiguration};
-    pub use crate::system::GbaSystem;
+    pub use crate::system::{GameState, GbaSystem};
     pub use crate::{gba_game, set_irq_functions};
 }
