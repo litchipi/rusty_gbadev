@@ -5,6 +5,7 @@ pub mod graphics;
 pub mod irq;
 pub mod save;
 pub mod system;
+pub mod assets;
 
 // TODO     feature-conditional message display macros
 //      Only allow displaying messages if the feature is allowed in Cargo.toml
