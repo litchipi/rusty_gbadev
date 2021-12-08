@@ -3,6 +3,7 @@
 
 pub mod graphics;
 pub mod irq;
+pub mod save;
 pub mod system;
 
 // TODO     feature-conditional message display macros
