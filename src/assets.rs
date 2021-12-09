@@ -1,92 +1,80 @@
+use heapless::Vec;
+use paste::paste;
 
-static data : Asset = Asset::create(include_bytes!("../../rusty_gbadev_test/build/icons/icon.bmp"), 12426, AssetType::Graphic(GraphicAsset::Bitmap(64, 64, 24)), AssetCompression::Lze);
+use crate::graphics::GraphicAsset;
 
+pub type AssetsManagerIdent = usize;
+
+pub struct AssetsManager<const N: usize> {
+    assets: AssetVec<N>,
+}
+
+impl<const N: usize> AssetsManager<N> {
+    pub fn register_asset(&mut self, asset: &'static Asset) -> AssetsManagerIdent {
+        self.assets.register(asset)
+    }
+}
+
+pub struct AssetVec<const N: usize>{
+    vec: Vec<&'static Asset, N>,
+    removed: Vec<AssetsManagerIdent, N>,
+}
+
+impl<const N: usize> AssetVec<N> {
+    pub fn register(&mut self, asset: &'static Asset) -> AssetsManagerIdent{
+        if self.removed.is_empty() {
+            self.vec.push(asset).unwrap();
+            (self.vec.len() - 1)
+        } else {
+            let id = self.removed.pop().unwrap();
+            *self.vec.get_mut(id).unwrap() = asset;
+            id
+        }
+    }
+
+    pub fn unregister(&mut self, ind: AssetsManagerIdent) {
+        self.removed.push(ind).expect("A0");
+    }
+
+    pub fn get(&self, ind: AssetsManagerIdent) -> Option<&&'static Asset> {
+        if self.removed.contains(&ind) {
+            None
+        } else {
+            self.vec.get(ind)
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! declare_asset {
+    ($name:ident, $fname:expr, $size:expr, $type:expr) => {
+        paste! {
+           static [< $name _DATA >] : &'static [u8] = include_bytes!($fname);
+           static $name : Asset = Asset::create([< $name _DATA >], $size, $type);
+        }
+    }
+}
+
+declare_asset!(HEART_ICON, "../../rusty_gbadev_test/build/icons/icon.bmp", 12426, AssetType::Graphic(GraphicAsset::Bitmap(64, 64)));
+
+#[derive(Debug)]
 pub struct Asset {
     data: &'static [u8],
     dcp_size: usize,
-    asset_type: AssetType,
-    compression: AssetCompression,
+    pub asset_type: AssetType,
 }
 
 impl Asset {
-    pub const fn create(data: &'static [u8], dcp_size: usize, asset_type: AssetType, compression: AssetCompression) -> Asset {
+    pub const fn create(data: &'static [u8], dcp_size: usize, asset_type: AssetType) -> Asset {
         Asset {
             data,
             dcp_size,
             asset_type,
-            compression
         }
     }
-
-    pub fn is_graphical(&self) -> bool {
-        matches!(self.asset_type, AssetType::Graphic(_))
-    }
-
-    pub fn load(&self, dst: *mut u8) {
-        self.compression.decompress(self.data, self.dcp_size, dst);
-    }
 }
 
-pub enum AssetCompression {
-    Blz,
-    Huffman,
-    Lze,
-    Lzss,
-    Lzx,
-    Rle,
-}
-
-impl AssetCompression {
-    fn build_prefix(&self, dcp_size: u32) -> u32 {
-        dcp_size << 8 | (1 << 4) | (0)
-    }
-
-    pub fn decompress(&self, src: &'static [u8], dcp_size: usize, dst: *mut u8) {
-        // TODO      Find a way to use BIOS function for decompression
-        //pub unsafe fn LZ77UnCompReadNormalWrite8bit(src: *const u32, dst: *mut u8) {
-        todo!();
-    }
-}
-
+#[derive(Debug)]
 pub enum AssetType {
     Graphic(GraphicAsset)
 }
-
-pub enum GraphicAsset {
-    Bitmap(width, height, color_depth),
-}
-
-impl GraphicAsset {
-    pub fn get_pixel(&self, x: usize, y: usize) -> Color {
-        todo!();
-    }
-}
-
-
-//
-// pub struct AssetsManager<T: GameAssets, const N: usize> {
-//     assets: [Asset; N],
-//     game_assets: T,
-// }
-//
-// impl<T: GameAssets, const N: usize> AssetsManager<T, N> {
-//     pub const fn new() -> AssetsManager<T, N> {
-//         AssetsManager {
-//             assets: (0..N).map(|n| T::get_asset(n)).collect(),
-//             game_assets: T::new(),
-//         }
-//     }
-// }
-//
-// pub type AssetId = u32;
-//
-// pub trait GameAssets { //: SpriteAssets { // : SoundsAssets + MusicAssets + SpriteAssets + BackgroundAssets
-//     fn get_asset(nb: usize) -> Asset;
-//     fn new() -> Self where Self: Sized;
-// }
-// //
-// // pub trait SpriteAssets {
-// //     type SpriteVariant;
-// //     fn get_sprite(&self, asked: SpriteVariant) -> AssetId;
-// // }
-//

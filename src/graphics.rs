@@ -1,6 +1,10 @@
 use gba::mmio_addresses as addr;
 use gba::mmio_types::{Color, DisplayControl};
 
+use crate::assets::{Asset, AssetType};
+
+const VRAM_ADDR : u32 = 0x0600_0000;
+
 pub mod colors;
 
 pub struct GraphicsConfiguration {
@@ -19,6 +23,7 @@ impl GraphicsConfiguration {
 
 pub struct GbaGraphics {
     pixel: usize,
+    display_mode: u16,
     ctl: DisplayControl,
 }
 
@@ -26,6 +31,7 @@ impl From<GraphicsConfiguration> for GbaGraphics {
     fn from(c: GraphicsConfiguration) -> GbaGraphics {
         let h = GbaGraphics {
             pixel: 0,
+            display_mode: c.display_mode,
             ctl: DisplayControl::new()
                 .with_display_mode(c.display_mode)
                 .with_display_bg0(c.with_display_bg[0])
@@ -57,6 +63,55 @@ impl GbaGraphics {
         self.pixel += 1;
         if self.pixel == (addr::mode3::WIDTH * addr::mode3::HEIGHT) {
             self.pixel = 0;
+        }
+    }
+
+    pub fn draw_bitmap(&mut self, a: &'static Asset, width: u32, height: u32, cfg: AssetDisplayConfig) {
+        if self.display_mode <= 2 {
+            unreachable!("G0");
+        }
+        // self.copy_data_to_vram(a);
+        todo!();
+    }
+}
+
+#[derive(Debug)]
+pub enum GraphicAsset {
+    Bitmap(u32, u32)
+}
+
+impl GraphicAsset {
+    pub fn display(&self, g: &mut GbaGraphics, a: &'static Asset, cfg: AssetDisplayConfig) {
+        match self {
+            GraphicAsset::Bitmap(w, h) => g.draw_bitmap(a, w, h cfg),
+        }
+    }
+}
+
+
+impl Asset {
+    pub fn is_graphical(&self) -> bool {
+        matches!(self.asset_type, AssetType::Graphic(_))
+    }
+
+    pub fn display(&'static self, g: &mut GbaGraphics, d: AssetDisplayConfig) {
+        if let AssetType::Graphic(ref a) = self.asset_type {
+            a.display(g, self, d);
+        } else {
+            unreachable!();
+        }
+    }
+}
+
+
+pub struct AssetDisplayConfig {
+    bg: u8,
+}
+
+impl Default for AssetDisplayConfig {
+    fn default() -> AssetDisplayConfig {
+        AssetDisplayConfig {
+            bg: 0
         }
     }
 }
